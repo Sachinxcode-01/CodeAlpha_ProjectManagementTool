@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In — TaskFlow</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+          <div class="brand-icon">TF</div>
+        </div>
+        <h1>Welcome Back</h1>
+        <p>Sign in to your TaskFlow workspace</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input type="email" id="email" class="form-input" placeholder="you@company.com" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" class="form-input" placeholder="••••••••" required>
+        </div>
+
+        <button type="submit" id="login-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 12px;">
+          Sign In
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 24px; font-size: 13.5px; color: var(--text-muted);">
+        Don't have an account? <a href="register.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Create one</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/api.js"></script>
+  <script>
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    // Redirect if already logged in
+    if (API.getToken()) {
+      API.get('/api/auth/me')
+        .then(() => window.location.href = '/')
+        .catch(() => API.setToken(null));
+    }
+
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+
+      try {
+        const res = await API.post('/api/auth/login', { email, password });
+        API.setToken(res.data.token);
+        API.setUser(res.data.user);
+        showToast('Signed in successfully!', 'success');
+        setTimeout(() => window.location.href = '/', 600);
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Sign In';
+      }
+    });
+  </script>
+</body>
+</html>

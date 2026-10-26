@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — TaskFlow</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+          <div class="brand-icon">TF</div>
+        </div>
+        <h1>Create Account</h1>
+        <p>Start collaborating with your team today</p>
+      </div>
+
+      <form id="register-form">
+        <div class="form-group">
+          <label class="form-label" for="name">Full Name</label>
+          <input type="text" id="name" class="form-input" placeholder="Alex Morgan" required autofocus>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">Email Address</label>
+          <input type="email" id="email" class="form-input" placeholder="you@company.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <input type="password" id="password" class="form-input" placeholder="At least 8 characters" minlength="8" required>
+        </div>
+
+        <button type="submit" id="register-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 12px;">
+          Create Free Account
+        </button>
+      </form>
+
+      <div style="text-align: center; margin-top: 24px; font-size: 13.5px; color: var(--text-muted);">
+        Already have an account? <a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="js/api.js"></script>
+  <script>
+    function showToast(msg, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('register-btn');
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      btn.disabled = true;
+      btn.textContent = 'Creating account...';
+
+      try {
+        const res = await API.post('/api/auth/register', { name, email, password });
+        API.setToken(res.data.token);
+        API.setUser(res.data.user);
+        showToast('Account created successfully!', 'success');
+        setTimeout(() => window.location.href = '/', 600);
+      } catch (err) {
+        showToast(err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = 'Create Free Account';
+      }
+    });
+  </script>
+</body>
+</html>
