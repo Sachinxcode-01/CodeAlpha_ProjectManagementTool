@@ -1,13 +1,76 @@
-// TaskFlow Frontend Application Logic
+// TaskFlow 2027 Pro — Advanced Frontend Controller
 let currentUser = null;
 let currentProjectId = null;
 let currentProjectData = null;
 let currentTaskId = null;
 let allProjectsCache = [];
 let currentProjectTasks = [];
+let draggedTaskId = null;
+let boardViewMode = 'kanban'; // 'kanban' or 'list'
 
 // ==========================================
-// Toast Utility
+// 60FPS Confetti Celebration Engine
+// ==========================================
+function triggerConfetti() {
+  const canvas = document.getElementById('confetti-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  const particles = [];
+  const colors = ['#6366f1', '#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#ffffff'];
+
+  for (let i = 0; i < 90; i++) {
+    particles.push({
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2 - 80,
+      r: Math.random() * 6 + 4,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      vx: (Math.random() - 0.5) * 16,
+      vy: (Math.random() - 0.7) * 18,
+      rotation: Math.random() * 360,
+      vRotation: (Math.random() - 0.5) * 10,
+      alpha: 1
+    });
+  }
+
+  function render() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    let active = false;
+
+    particles.forEach(p => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.35; // Gravity
+      p.vx *= 0.98;
+      p.rotation += p.vRotation;
+      p.alpha -= 0.012;
+
+      if (p.alpha > 0) {
+        active = true;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.translate(p.x, p.y);
+        ctx.rotate((p.rotation * Math.PI) / 180);
+        ctx.fillStyle = p.color;
+        ctx.fillRect(-p.r / 2, -p.r / 2, p.r, p.r * 1.6);
+        ctx.restore();
+      }
+    });
+
+    if (active) {
+      requestAnimationFrame(render);
+    } else {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  requestAnimationFrame(render);
+}
+
+// ==========================================
+// Toast Notifications
 // ==========================================
 function showToast(message, type = 'info') {
   const container = document.getElementById('toast-container');
@@ -17,7 +80,8 @@ function showToast(message, type = 'info') {
   container.appendChild(toast);
   setTimeout(() => {
     toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s ease';
+    toast.style.transform = 'translateY(10px)';
+    toast.style.transition = 'all 0.3s ease';
     setTimeout(() => toast.remove(), 300);
   }, 3500);
 }
@@ -50,9 +114,110 @@ document.querySelectorAll('[data-close]').forEach(btn => {
   });
 });
 
+// Mobile Sidebar Toggle
+const mobileBtn = document.getElementById('mobile-toggle-btn');
+const sidebar = document.getElementById('app-sidebar');
+if (mobileBtn && sidebar) {
+  mobileBtn.addEventListener('click', () => {
+    sidebar.classList.toggle('open');
+  });
+}
+
+// ==========================================
+// Command Palette (Ctrl+K / Cmd+K)
+// ==========================================
+const cmdOverlay = document.getElementById('command-palette-overlay');
+const cmdInput = document.getElementById('command-palette-input');
+const cmdResults = document.getElementById('command-palette-results');
+
+function openCommandPalette() {
+  if (!cmdOverlay) return;
+  cmdOverlay.classList.add('active');
+  cmdInput.value = '';
+  cmdInput.focus();
+  renderCommandResults('');
+}
+
+function closeCommandPalette() {
+  if (!cmdOverlay) return;
+  cmdOverlay.classList.remove('active');
+}
+
+if (document.getElementById('btn-trigger-cmd')) {
+  document.getElementById('btn-trigger-cmd').addEventListener('click', openCommandPalette);
+}
+if (document.getElementById('nav-btn-command-palette')) {
+  document.getElementById('nav-btn-command-palette').addEventListener('click', openCommandPalette);
+}
+
+if (cmdOverlay) {
+  cmdOverlay.addEventListener('click', (e) => {
+    if (e.target === cmdOverlay) closeCommandPalette();
+  });
+}
+
+if (cmdInput) {
+  cmdInput.addEventListener('input', (e) => {
+    renderCommandResults(e.target.value.toLowerCase().trim());
+  });
+}
+
+function renderCommandResults(query) {
+  const actions = [
+    { title: '📊 Go to Dashboard', desc: 'Overview, analytics & deadlines', run: () => switchView('dashboard') },
+    { title: '📁 Go to Projects', desc: 'Browse all workspaces & boards', run: () => switchView('projects') },
+    { title: '✨ + New Project', desc: 'Initialize a new project workspace', run: () => openCreateProjectModal() },
+    { title: '⚡ + New Task', desc: 'Create a task across your projects', run: () => openCreateTaskModal() }
+  ];
+
+  // Include projects in search
+  allProjectsCache.forEach(p => {
+    actions.push({
+      title: `📂 Project: ${p.name}`,
+      desc: `Open board (${p.status}, ${p.total_tasks || 0} tasks)`,
+      run: () => switchView('board', p.id)
+    });
+  });
+
+  const filtered = actions.filter(a => a.title.toLowerCase().includes(query) || a.desc.toLowerCase().includes(query));
+
+  if (filtered.length === 0) {
+    cmdResults.innerHTML = `<div style="padding: 16px; text-align: center; color: var(--text-dim); font-size: 13.5px;">No matching actions found</div>`;
+    return;
+  }
+
+  cmdResults.innerHTML = filtered.map((item, idx) => `
+    <div class="command-item ${idx === 0 ? 'selected' : ''}" data-idx="${idx}">
+      <div>
+        <div style="font-weight: 700; color: #fff;">${escapeHtml(item.title)}</div>
+        <div style="font-size: 12px; color: var(--text-dim);">${escapeHtml(item.desc)}</div>
+      </div>
+      <span class="nav-kbd">Select</span>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.command-item').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = Number(el.dataset.idx);
+      closeCommandPalette();
+      filtered[idx].run();
+    });
+  });
+}
+
+// Global Keyboard Shortcuts
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    if (cmdOverlay.classList.contains('active')) closeCommandPalette();
+    else openCommandPalette();
+  } else if (e.key === 'Escape') {
+    closeCommandPalette();
     document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    if (sidebar) sidebar.classList.remove('open');
+  } else if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName)) {
+    if (e.key === '1') switchView('dashboard');
+    else if (e.key === '2') switchView('projects');
   }
 });
 
@@ -63,6 +228,8 @@ function switchView(viewName, param = null) {
   document.getElementById('view-dashboard').style.display = 'none';
   document.getElementById('view-projects').style.display = 'none';
   document.getElementById('view-board').style.display = 'none';
+
+  if (sidebar) sidebar.classList.remove('open');
 
   document.querySelectorAll('.nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.view === viewName);
@@ -124,11 +291,11 @@ document.getElementById('logout-btn').addEventListener('click', () => {
   API.setToken(null);
   API.setUser(null);
   showToast('Logged out.', 'info');
-  setTimeout(() => window.location.href = '/login.html', 400);
+  setTimeout(() => window.location.href = '/login.html', 300);
 });
 
 // ==========================================
-// Dashboard Logic
+// Dashboard Logic & Analytics Ring
 // ==========================================
 async function loadDashboard() {
   try {
@@ -143,22 +310,36 @@ async function loadDashboard() {
     document.getElementById('metric-completed-tasks').textContent = metrics.completed_tasks;
     document.getElementById('metric-overdue-tasks').textContent = metrics.overdue_tasks;
 
+    // Animate Circular Progress Meter
+    const total = metrics.total_tasks || 0;
+    const completed = metrics.completed_tasks || 0;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+    const ringCircle = document.getElementById('analytics-ring-circle');
+    const ringRateVal = document.getElementById('analytics-rate-val');
+    if (ringCircle && ringRateVal) {
+      ringRateVal.textContent = `${percent}%`;
+      const circumference = 2 * Math.PI * 40; // 251.2
+      const offset = circumference - (percent / 100) * circumference;
+      ringCircle.style.strokeDashoffset = offset;
+    }
+
     // Upcoming Deadlines
     const deadlinesContainer = document.getElementById('upcoming-deadlines-container');
     if (!upcoming_deadlines || upcoming_deadlines.length === 0) {
-      deadlinesContainer.innerHTML = `<p style="color: var(--text-dim); font-size: 13.5px;">No deadlines within the next 7 days.</p>`;
+      deadlinesContainer.innerHTML = `<p style="color: var(--text-dim); font-size: 13.5px; padding: 12px 0;">No deadlines within the next 7 days.</p>`;
     } else {
       deadlinesContainer.innerHTML = `
         <div style="display: flex; flex-direction: column; gap: 10px;">
           ${upcoming_deadlines.map(t => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px; background: var(--bg-primary); border-radius: var(--radius-md); border: 1px solid var(--border-color); cursor: pointer;" onclick="openTaskDetail(${t.id})">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; background: var(--bg-primary); border-radius: var(--radius-md); border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.2s ease;" onclick="openTaskDetail(${t.id})" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='none'">
               <div>
-                <div style="font-weight: 600; font-size: 14px; margin-bottom: 2px;">${escapeHtml(t.title)}</div>
+                <div style="font-weight: 700; font-size: 14px; margin-bottom: 2px;">${escapeHtml(t.title)}</div>
                 <div style="font-size: 12px; color: var(--text-dim);">${escapeHtml(t.project_name)} • Assigned: ${escapeHtml(t.assignee_name || 'Unassigned')}</div>
               </div>
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span class="badge badge-${t.priority.toLowerCase()}">${t.priority}</span>
-                <span style="font-size: 12px; font-weight: 600; color: #f87171;">Due ${formatDate(t.due_date)}</span>
+                <span style="font-size: 12px; font-weight: 700; color: #f87171;">Due ${formatDate(t.due_date)}</span>
               </div>
             </div>
           `).join('')}
@@ -169,13 +350,13 @@ async function loadDashboard() {
     // Recent Activity
     const activityContainer = document.getElementById('recent-activity-container');
     if (!recent_activity || recent_activity.length === 0) {
-      activityContainer.innerHTML = `<p style="color: var(--text-dim); font-size: 13.5px;">No activity logged yet.</p>`;
+      activityContainer.innerHTML = `<p style="color: var(--text-dim); font-size: 13.5px; padding: 12px 0;">No activity logged yet.</p>`;
     } else {
       activityContainer.innerHTML = recent_activity.map(a => `
-        <div style="display: flex; align-items: flex-start; gap: 10px; font-size: 13px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.04);">
-          <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px;"></div>
+        <div style="display: flex; align-items: flex-start; gap: 12px; font-size: 13px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.04);">
+          <div style="width: 8px; height: 8px; border-radius: 50%; background: var(--primary); margin-top: 6px; box-shadow: 0 0 8px var(--primary);"></div>
           <div style="flex: 1;">
-            <span style="font-weight: 600; color: #fff;">${escapeHtml(a.actor_name)}</span>: ${escapeHtml(a.details || a.action_type)}
+            <span style="font-weight: 700; color: #fff;">${escapeHtml(a.actor_name)}</span>: ${escapeHtml(a.details || a.action_type)}
             <div style="font-size: 11px; color: var(--text-dim); margin-top: 2px;">${timeAgo(a.created_at)} • ${escapeHtml(a.project_name)}</div>
           </div>
         </div>
@@ -215,8 +396,8 @@ function renderProjectsGrid() {
 
   if (filtered.length === 0) {
     container.innerHTML = `
-      <div style="grid-column: 1 / -1; text-align: center; padding: 48px; background: var(--bg-card); border-radius: var(--radius-lg); border: 1px dashed var(--border-color);">
-        <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 12px;">No projects found.</p>
+      <div style="grid-column: 1 / -1; text-align: center; padding: 56px 24px; background: var(--bg-card); border-radius: var(--radius-xl); border: 1px dashed var(--border-color);">
+        <p style="color: var(--text-muted); font-size: 15px; margin-bottom: 14px;">No projects found.</p>
         <button class="btn btn-primary btn-sm" onclick="openCreateProjectModal()">Create your first project</button>
       </div>
     `;
@@ -236,9 +417,9 @@ function renderProjectsGrid() {
         </div>
         <p class="project-card-desc">${escapeHtml(p.description || 'No description provided.')}</p>
 
-        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px;">
-          <span style="color: var(--text-dim);">Progress</span>
-          <span style="font-weight: 700; color: #fff;">${progress}% (${completed}/${total})</span>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 8px;">
+          <span style="color: var(--text-dim); font-weight: 600;">Completion Rate</span>
+          <span style="font-weight: 800; color: #fff;">${progress}% (${completed}/${total})</span>
         </div>
         <div class="project-progress-bar">
           <div class="project-progress-fill" style="width: ${progress}%;"></div>
@@ -257,7 +438,7 @@ document.getElementById('project-search-input').addEventListener('input', render
 document.getElementById('project-status-filter').addEventListener('change', renderProjectsGrid);
 
 // ==========================================
-// Project Board & Kanban Logic
+// Project Board & Kanban Logic with Drag-and-Drop
 // ==========================================
 async function loadBoard(projectId) {
   currentProjectId = projectId;
@@ -265,7 +446,7 @@ async function loadBoard(projectId) {
   const colProgress = document.getElementById('column-in_progress');
   const colCompleted = document.getElementById('column-completed');
 
-  colTodo.innerHTML = `<p style="color: var(--text-dim); font-size: 13px;">Loading...</p>`;
+  colTodo.innerHTML = `<p style="color: var(--text-dim); font-size: 13px;">Loading tasks...</p>`;
   colProgress.innerHTML = '';
   colCompleted.innerHTML = '';
 
@@ -275,7 +456,7 @@ async function loadBoard(projectId) {
 
     document.getElementById('board-project-title').textContent = currentProjectData.name;
     document.getElementById('board-project-desc').textContent = currentProjectData.description || 'No description';
-    
+
     const statusBadge = document.getElementById('board-project-status');
     statusBadge.textContent = currentProjectData.status;
     statusBadge.className = `badge badge-${currentProjectData.status.toLowerCase()}`;
@@ -288,7 +469,7 @@ async function loadBoard(projectId) {
     const deleteBtn = document.getElementById('btn-delete-project');
     deleteBtn.style.display = currentProjectData.user_role === 'OWNER' ? 'inline-flex' : 'none';
 
-    // Populate assignee filter options
+    // Populate assignee filter
     const assigneeFilter = document.getElementById('task-assignee-filter');
     assigneeFilter.innerHTML = '<option value="ALL">All Assignees</option><option value="unassigned">Unassigned</option>';
     currentProjectData.members.forEach(m => {
@@ -310,18 +491,45 @@ async function refreshBoardTasks() {
   try {
     const tasksRes = await API.get(`/api/projects/${currentProjectId}/tasks`);
     currentProjectTasks = tasksRes.data;
-    renderKanbanTasks();
+    renderBoardView();
   } catch (err) {
     showToast('Error fetching tasks: ' + err.message, 'error');
   }
 }
 
-function renderKanbanTasks() {
+function renderBoardView() {
+  if (boardViewMode === 'kanban') {
+    document.getElementById('kanban-board-container').style.display = 'grid';
+    document.getElementById('board-list-container').style.display = 'none';
+    renderKanbanTasks();
+  } else {
+    document.getElementById('kanban-board-container').style.display = 'none';
+    document.getElementById('board-list-container').style.display = 'block';
+    renderListTasks();
+  }
+}
+
+// View toggle buttons
+document.getElementById('btn-view-kanban').addEventListener('click', () => {
+  boardViewMode = 'kanban';
+  document.getElementById('btn-view-kanban').classList.add('active');
+  document.getElementById('btn-view-list').classList.remove('active');
+  renderBoardView();
+});
+
+document.getElementById('btn-view-list').addEventListener('click', () => {
+  boardViewMode = 'list';
+  document.getElementById('btn-view-list').classList.add('active');
+  document.getElementById('btn-view-kanban').classList.remove('active');
+  renderBoardView();
+});
+
+function getFilteredTasks() {
   const searchTerm = document.getElementById('task-search-input').value.toLowerCase().trim();
   const priorityFilter = document.getElementById('task-priority-filter').value;
   const assigneeFilter = document.getElementById('task-assignee-filter').value;
 
-  const filtered = currentProjectTasks.filter(t => {
+  return currentProjectTasks.filter(t => {
     const matchesSearch = t.title.toLowerCase().includes(searchTerm) || (t.description && t.description.toLowerCase().includes(searchTerm));
     const matchesPriority = priorityFilter === 'ALL' || t.priority === priorityFilter;
     let matchesAssignee = true;
@@ -332,6 +540,10 @@ function renderKanbanTasks() {
     }
     return matchesSearch && matchesPriority && matchesAssignee;
   });
+}
+
+function renderKanbanTasks() {
+  const filtered = getFilteredTasks();
 
   const todoTasks = filtered.filter(t => t.status === 'TODO');
   const progressTasks = filtered.filter(t => t.status === 'IN_PROGRESS');
@@ -346,23 +558,43 @@ function renderKanbanTasks() {
   document.getElementById('column-completed').innerHTML = renderTaskCardsList(completedTasks);
 }
 
+function renderListTasks() {
+  const filtered = getFilteredTasks();
+  const rowsContainer = document.getElementById('board-list-rows');
+
+  if (filtered.length === 0) {
+    rowsContainer.innerHTML = `<div style="padding: 32px; text-align: center; color: var(--text-dim); font-size: 13.5px;">No matching tasks found.</div>`;
+    return;
+  }
+
+  rowsContainer.innerHTML = filtered.map(t => `
+    <div style="padding: 14px 20px; border-bottom: 1px solid var(--border-color); display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr; align-items: center; cursor: pointer; transition: background 0.15s ease;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'" onclick="openTaskDetail(${t.id})">
+      <div style="font-weight: 700; color: #fff;">${escapeHtml(t.title)}</div>
+      <div><span class="badge badge-${t.status.toLowerCase()}">${t.status}</span></div>
+      <div><span class="badge badge-${t.priority.toLowerCase()}">${t.priority}</span></div>
+      <div style="font-size: 13px; color: var(--text-muted);">${escapeHtml(t.assignee_name || 'Unassigned')}</div>
+      <div style="font-size: 13px; color: var(--text-dim);">${t.due_date ? formatDate(t.due_date) : '—'}</div>
+    </div>
+  `).join('');
+}
+
 function renderTaskCardsList(tasks) {
   if (tasks.length === 0) {
-    return `<div style="text-align: center; padding: 24px 0; color: var(--text-dim); font-size: 13px;">No tasks</div>`;
+    return `<div style="text-align: center; padding: 32px 0; color: var(--text-dim); font-size: 13px;">No tasks</div>`;
   }
 
   return tasks.map(t => {
     const isOverdue = t.status !== 'COMPLETED' && t.due_date && new Date(t.due_date) < new Date().setHours(0,0,0,0);
 
     return `
-      <div class="task-card" onclick="openTaskDetail(${t.id})">
+      <div class="task-card" draggable="true" ondragstart="handleDragStart(event, ${t.id})" onclick="openTaskDetail(${t.id})">
         <div class="task-card-header">
           <span class="badge badge-${t.priority.toLowerCase()}">${t.priority}</span>
           ${isOverdue ? '<span class="badge badge-urgent" style="font-size: 10px;">Overdue</span>' : ''}
         </div>
         <h4 class="task-card-title">${escapeHtml(t.title)}</h4>
-        ${t.description ? `<p style="font-size: 12.5px; color: var(--text-muted); line-height: 1.4; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(t.description)}</p>` : ''}
-        
+        ${t.description ? `<p style="font-size: 13px; color: var(--text-muted); line-height: 1.45; margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">${escapeHtml(t.description)}</p>` : ''}
+
         <div class="task-card-footer">
           <span>👤 ${escapeHtml(t.assignee_name || 'Unassigned')}</span>
           <div style="display: flex; align-items: center; gap: 8px;">
@@ -375,9 +607,60 @@ function renderTaskCardsList(tasks) {
   }).join('');
 }
 
-document.getElementById('task-search-input').addEventListener('input', renderKanbanTasks);
-document.getElementById('task-priority-filter').addEventListener('change', renderKanbanTasks);
-document.getElementById('task-assignee-filter').addEventListener('change', renderKanbanTasks);
+// Native HTML5 Drag and Drop Handlers
+function handleDragStart(e, taskId) {
+  draggedTaskId = taskId;
+  e.dataTransfer.setData('text/plain', taskId);
+  e.dataTransfer.effectAllowed = 'move';
+  e.target.classList.add('dragging');
+  setTimeout(() => e.target.classList.remove('dragging'), 0);
+}
+
+function handleDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+  const column = e.currentTarget;
+  column.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  const column = e.currentTarget;
+  column.classList.remove('drag-over');
+}
+
+async function handleDrop(e, targetStatus) {
+  e.preventDefault();
+  const column = e.currentTarget;
+  column.classList.remove('drag-over');
+
+  const taskId = draggedTaskId;
+  if (!taskId) return;
+
+  const targetTask = currentProjectTasks.find(t => t.id === taskId);
+  if (!targetTask || targetTask.status === targetStatus) return;
+
+  try {
+    await API.patch(`/api/tasks/${taskId}`, { status: targetStatus });
+    targetTask.status = targetStatus;
+
+    if (targetStatus === 'COMPLETED') {
+      triggerConfetti();
+      showToast('🎉 Task completed! Awesome work!', 'success');
+    } else {
+      showToast(`Task moved to ${targetStatus}`, 'info');
+    }
+
+    renderBoardView();
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    draggedTaskId = null;
+  }
+}
+
+document.getElementById('task-search-input').addEventListener('input', renderBoardView);
+document.getElementById('task-priority-filter').addEventListener('change', renderBoardView);
+document.getElementById('task-assignee-filter').addEventListener('change', renderBoardView);
 
 document.getElementById('btn-back-to-projects').addEventListener('click', () => {
   switchView('projects');
@@ -456,8 +739,8 @@ async function openCreateTaskModal(targetProjectId = null) {
 
   const projSelect = document.getElementById('task-project-select');
   projSelect.innerHTML = '';
+  projSelect.disabled = false;
 
-  // Load accessible projects into select
   if (allProjectsCache.length === 0) {
     const res = await API.get('/api/projects');
     allProjectsCache = res.data;
@@ -521,6 +804,7 @@ document.getElementById('form-task').addEventListener('submit', async (e) => {
         title, description, priority, status, due_date, assignee_id
       });
       showToast('Task updated successfully.', 'success');
+      if (status === 'COMPLETED') triggerConfetti();
     } else {
       await API.post(`/api/projects/${projectId}/tasks`, {
         title, description, priority, status, due_date, assignee_id
@@ -530,7 +814,6 @@ document.getElementById('form-task').addEventListener('submit', async (e) => {
 
     closeModal('modal-task');
 
-    // Refresh whichever view is open
     if (document.getElementById('view-board').style.display !== 'none' && currentProjectId == projectId) {
       refreshBoardTasks();
     } else if (document.getElementById('view-dashboard').style.display !== 'none') {
@@ -552,7 +835,7 @@ async function openTaskDetail(taskId) {
 
     document.getElementById('detail-task-title').textContent = task.title;
     document.getElementById('detail-task-desc').textContent = task.description || 'No detailed description.';
-    
+
     const prio = document.getElementById('detail-task-priority');
     prio.textContent = task.priority;
     prio.className = `badge badge-${task.priority.toLowerCase()}`;
@@ -603,7 +886,12 @@ async function openTaskDetail(taskId) {
 async function updateTaskStatus(taskId, newStatus) {
   try {
     await API.patch(`/api/tasks/${taskId}`, { status: newStatus });
-    showToast(`Task moved to ${newStatus}`, 'success');
+    if (newStatus === 'COMPLETED') {
+      triggerConfetti();
+      showToast('🎉 Task marked completed!', 'success');
+    } else {
+      showToast(`Task moved to ${newStatus}`, 'success');
+    }
     openTaskDetail(taskId);
     if (currentProjectId) refreshBoardTasks();
   } catch (err) {
@@ -662,7 +950,6 @@ document.getElementById('form-comment').addEventListener('submit', async (e) => 
   try {
     await API.post(`/api/tasks/${currentTaskId}/comments`, { content });
     input.value = '';
-    // Refresh modal comments
     const res = await API.get(`/api/tasks/${currentTaskId}`);
     renderComments(res.data.comments);
     showToast('Comment posted.', 'success');
@@ -699,9 +986,9 @@ async function loadMembersModal() {
     const members = res.data;
 
     container.innerHTML = members.map(m => `
-      <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-primary); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: var(--bg-primary); border-radius: var(--radius-md); border: 1px solid var(--border-color);">
         <div>
-          <div style="font-weight: 600; font-size: 13.5px;">${escapeHtml(m.name)}</div>
+          <div style="font-weight: 700; font-size: 13.5px; color: #fff;">${escapeHtml(m.name)}</div>
           <div style="font-size: 12px; color: var(--text-dim);">${escapeHtml(m.email)}</div>
         </div>
         <div style="display: flex; align-items: center; gap: 10px;">

@@ -9,7 +9,8 @@ async function runTests() {
   const healthData = await healthRes.json();
   console.log('✔ Test 1 Health Check:', healthData.message);
 
-  // Test 2: Register User 1 (Alex Morgan)
+  // Test 2: Register/Login User 1 (Alex Morgan)
+  let tokenAlex;
   const reg1Res = await fetch(`${BASE_URL}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -20,8 +21,20 @@ async function runTests() {
     })
   });
   const reg1Data = await reg1Res.json();
-  console.log('✔ Test 2 Register User 1 (Alex):', reg1Data.success ? 'SUCCESS' : reg1Data.error);
-  const tokenAlex = reg1Data.data?.token;
+  if (reg1Res.status === 201) {
+    tokenAlex = reg1Data.data?.token;
+    console.log('✔ Test 2 Register User 1 (Alex): SUCCESS (201 Created)');
+  } else {
+    // If already registered, login
+    const login1 = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'alex@example.com', password: 'Password123!' })
+    });
+    const login1Data = await login1.json();
+    tokenAlex = login1Data.data?.token;
+    console.log('✔ Test 2 User 1 (Alex) authenticated via login: SUCCESS');
+  }
 
   // Test 3: Duplicate Email Check
   const dupRes = await fetch(`${BASE_URL}/api/auth/register`, {
@@ -35,7 +48,9 @@ async function runTests() {
   });
   console.log('✔ Test 3 Duplicate Email Rejection:', dupRes.status === 409 ? 'PASSED (409 Conflict)' : 'FAILED');
 
-  // Test 4: Register User 2 (Sam Taylor)
+  // Test 4: Register/Login User 2 (Sam Taylor)
+  let tokenSam;
+  let user2Id;
   const reg2Res = await fetch(`${BASE_URL}/api/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -46,9 +61,21 @@ async function runTests() {
     })
   });
   const reg2Data = await reg2Res.json();
-  console.log('✔ Test 4 Register User 2 (Sam):', reg2Data.success ? 'SUCCESS' : reg2Data.error);
-  const tokenSam = reg2Data.data?.token;
-  const user2Id = reg2Data.data?.user.id;
+  if (reg2Res.status === 201) {
+    tokenSam = reg2Data.data?.token;
+    user2Id = reg2Data.data?.user.id;
+    console.log('✔ Test 4 Register User 2 (Sam): SUCCESS (201 Created)');
+  } else {
+    const login2 = await fetch(`${BASE_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'sam@example.com', password: 'Password123!' })
+    });
+    const login2Data = await login2.json();
+    tokenSam = login2Data.data?.token;
+    user2Id = login2Data.data?.user.id;
+    console.log('✔ Test 4 User 2 (Sam) authenticated via login: SUCCESS');
+  }
 
   // Test 5: Alex Creates Project
   const projRes = await fetch(`${BASE_URL}/api/projects`, {

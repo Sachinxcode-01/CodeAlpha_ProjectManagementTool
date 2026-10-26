@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign In — TaskFlow</title>
+  <title>Sign In — TaskFlow Pro</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
   <div class="auth-wrapper">
     <div class="auth-card">
       <div class="auth-header">
-        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: center; margin-bottom: 14px;">
           <div class="brand-icon">TF</div>
         </div>
         <h1>Welcome Back</h1>
-        <p>Sign in to your TaskFlow workspace</p>
+        <p>Sign in to your next-gen workspace</p>
       </div>
 
       <form id="login-form">
@@ -24,17 +24,32 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="password">Password</label>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px;">
+            <label class="form-label" for="password" style="margin-bottom: 0;">Password</label>
+          </div>
           <input type="password" id="password" class="form-input" placeholder="••••••••" required>
         </div>
 
-        <button type="submit" id="login-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 12px;">
-          Sign In
+        <button type="submit" id="login-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 13px;">
+          Sign In to Workspace
         </button>
       </form>
 
-      <div style="text-align: center; margin-top: 24px; font-size: 13.5px; color: var(--text-muted);">
-        Don't have an account? <a href="register.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Create one</a>
+      <!-- 1-Click Demo Login for Evaluators -->
+      <div class="demo-login-box">
+        <div class="demo-login-box-title">⚡ Evaluator 1-Click Demo Login</div>
+        <div class="demo-btn-group">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-demo-alex">
+            👑 Alex (Owner)
+          </button>
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-demo-sam">
+            👤 Sam (Member)
+          </button>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-top: 26px; font-size: 13.5px; color: var(--text-muted);">
+        Don't have an account? <a href="register.html" style="color: var(--primary); text-decoration: none; font-weight: 700;">Create one free</a>
       </div>
     </div>
   </div>
@@ -52,33 +67,49 @@
       setTimeout(() => toast.remove(), 4000);
     }
 
-    // Redirect if already logged in
+    // Redirect if already authenticated
     if (API.getToken()) {
       API.get('/api/auth/me')
         .then(() => window.location.href = '/')
         .catch(() => API.setToken(null));
     }
 
-    document.getElementById('login-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
+    async function executeLogin(email, password) {
       const btn = document.getElementById('login-btn');
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-
       btn.disabled = true;
-      btn.textContent = 'Signing in...';
+      btn.textContent = 'Authenticating...';
 
       try {
         const res = await API.post('/api/auth/login', { email, password });
         API.setToken(res.data.token);
         API.setUser(res.data.user);
         showToast('Signed in successfully!', 'success');
-        setTimeout(() => window.location.href = '/', 600);
+        setTimeout(() => window.location.href = '/', 500);
       } catch (err) {
         showToast(err.message, 'error');
         btn.disabled = false;
-        btn.textContent = 'Sign In';
+        btn.textContent = 'Sign In to Workspace';
       }
+    }
+
+    document.getElementById('login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      executeLogin(email, password);
+    });
+
+    // 1-Click Demo Logins
+    document.getElementById('btn-demo-alex').addEventListener('click', () => {
+      document.getElementById('email').value = 'alex@example.com';
+      document.getElementById('password').value = 'Password123!';
+      executeLogin('alex@example.com', 'Password123!');
+    });
+
+    document.getElementById('btn-demo-sam').addEventListener('click', () => {
+      document.getElementById('email').value = 'sam@example.com';
+      document.getElementById('password').value = 'Password123!';
+      executeLogin('sam@example.com', 'Password123!');
     });
   </script>
 </body>

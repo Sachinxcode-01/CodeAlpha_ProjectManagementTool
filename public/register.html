@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Create Account — TaskFlow</title>
+  <title>Create Account — TaskFlow Pro</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
   <div class="auth-wrapper">
     <div class="auth-card">
       <div class="auth-header">
-        <div style="display: flex; justify-content: center; margin-bottom: 12px;">
+        <div style="display: flex; justify-content: center; margin-bottom: 14px;">
           <div class="brand-icon">TF</div>
         </div>
         <h1>Create Account</h1>
-        <p>Start collaborating with your team today</p>
+        <p>Unlock high-velocity project management</p>
       </div>
 
       <form id="register-form">
@@ -29,17 +29,17 @@
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="password">Password</label>
-          <input type="password" id="password" class="form-input" placeholder="At least 8 characters" minlength="8" required>
+          <label class="form-label" for="password">Password (Minimum 8 Characters)</label>
+          <input type="password" id="password" class="form-input" placeholder="••••••••" minlength="8" required>
         </div>
 
-        <button type="submit" id="register-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 12px;">
+        <button type="submit" id="register-btn" class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 13px;">
           Create Free Account
         </button>
       </form>
 
-      <div style="text-align: center; margin-top: 24px; font-size: 13.5px; color: var(--text-muted);">
-        Already have an account? <a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 600;">Sign in</a>
+      <div style="text-align: center; margin-top: 26px; font-size: 13.5px; color: var(--text-muted);">
+        Already have an account? <a href="login.html" style="color: var(--primary); text-decoration: none; font-weight: 700;">Sign in here</a>
       </div>
     </div>
   </div>
@@ -65,14 +65,14 @@
       const password = document.getElementById('password').value;
 
       btn.disabled = true;
-      btn.textContent = 'Creating account...';
+      btn.textContent = 'Setting up account...';
 
       try {
         const res = await API.post('/api/auth/register', { name, email, password });
         API.setToken(res.data.token);
         API.setUser(res.data.user);
-        showToast('Account created successfully!', 'success');
-        setTimeout(() => window.location.href = '/', 600);
+        showToast('Account initialized successfully!', 'success');
+        setTimeout(() => window.location.href = '/', 500);
       } catch (err) {
         showToast(err.message, 'error');
         btn.disabled = false;

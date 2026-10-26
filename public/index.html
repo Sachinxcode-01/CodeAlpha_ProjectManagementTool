@@ -3,34 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TaskFlow — Professional Project Management</title>
+  <title>TaskFlow Pro — Next-Gen Project Management</title>
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
+  <!-- Fullscreen Confetti Canvas for 60fps Celebrations -->
+  <canvas id="confetti-canvas"></canvas>
+
   <div id="app-container">
     <!-- Sidebar -->
-    <aside class="sidebar">
+    <aside class="sidebar" id="app-sidebar">
       <div class="brand">
         <div class="brand-icon">TF</div>
-        <div class="brand-title">TaskFlow</div>
+        <div class="brand-title-wrap">
+          <div class="brand-title">TaskFlow</div>
+          <span class="brand-badge">2027 PRO</span>
+        </div>
       </div>
 
       <ul class="nav-links">
+        <li class="nav-category">Main Workspace</li>
         <li>
           <a class="nav-item active" data-view="dashboard">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
-            </svg>
-            Dashboard
+            <div class="nav-item-content">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+              </svg>
+              <span>Dashboard</span>
+            </div>
+            <span class="nav-kbd">1</span>
           </a>
         </li>
         <li>
           <a class="nav-item" data-view="projects">
-            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
-            </svg>
-            Projects
+            <div class="nav-item-content">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/>
+              </svg>
+              <span>Projects</span>
+            </div>
+            <span class="nav-kbd">2</span>
           </a>
+        </li>
+
+        <li class="nav-category" style="margin-top: 10px;">Quick Shortcuts</li>
+        <li>
+          <div class="nav-item" id="nav-btn-command-palette">
+            <div class="nav-item-content">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+              </svg>
+              <span>Command Palette</span>
+            </div>
+            <span class="nav-kbd">Ctrl K</span>
+          </div>
         </li>
       </ul>
 
@@ -52,8 +78,23 @@
     <!-- Main Content Area -->
     <main class="main-wrapper">
       <header class="topbar">
-        <h1 class="page-title" id="page-heading">Dashboard</h1>
+        <div class="topbar-left">
+          <button id="mobile-toggle-btn" class="mobile-menu-btn" aria-label="Toggle Navigation">
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+          <h1 class="page-title" id="page-heading">Dashboard</h1>
+        </div>
+
         <div class="topbar-actions">
+          <button class="command-bar-btn" id="btn-trigger-cmd">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+            </svg>
+            <span>Search or command...</span>
+            <span class="nav-kbd">Ctrl K</span>
+          </button>
           <button id="btn-create-project-global" class="btn btn-secondary">
             + New Project
           </button>
@@ -64,8 +105,31 @@
       </header>
 
       <div class="content-body">
-        <!-- View: Dashboard -->
+        <!-- VIEW 1: DASHBOARD -->
         <section id="view-dashboard">
+          <!-- Hero Analytics Progress Meter -->
+          <div class="analytics-hero-card">
+            <div class="analytics-text">
+              <h2>Workspace Performance Overview</h2>
+              <p>Real-time analytics computed directly from your SQLite transactional database.</p>
+            </div>
+            <div class="analytics-ring-wrap">
+              <svg class="analytics-ring-svg">
+                <defs>
+                  <linearGradient id="accent-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#6366f1" />
+                    <stop offset="50%" stop-color="#a855f7" />
+                    <stop offset="100%" stop-color="#06b6d4" />
+                  </linearGradient>
+                </defs>
+                <circle class="analytics-ring-bg" cx="50" cy="50" r="40" />
+                <circle class="analytics-ring-fill" id="analytics-ring-circle" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="251.2" />
+              </svg>
+              <div class="analytics-ring-percent" id="analytics-rate-val">0%</div>
+            </div>
+          </div>
+
+          <!-- Metrics Grid -->
           <div class="metrics-grid">
             <div class="metric-card">
               <div class="metric-label">Total Projects</div>
@@ -84,7 +148,7 @@
               <div class="metric-value" id="metric-assigned-me" style="color: var(--primary);">0</div>
             </div>
             <div class="metric-card">
-              <div class="metric-label">Completed Tasks</div>
+              <div class="metric-label">Completed</div>
               <div class="metric-value" id="metric-completed-tasks" style="color: var(--color-completed);">0</div>
             </div>
             <div class="metric-card">
@@ -93,10 +157,11 @@
             </div>
           </div>
 
+          <!-- Split Sections -->
           <div class="dashboard-sections">
             <div class="panel">
               <div class="panel-header">
-                <h2 class="panel-title">Upcoming Deadlines (Next 7 Days)</h2>
+                <h2 class="panel-title">📅 Upcoming Deadlines (Next 7 Days)</h2>
               </div>
               <div id="upcoming-deadlines-container">
                 <p style="color: var(--text-dim); font-size: 13.5px;">Loading deadlines...</p>
@@ -105,7 +170,7 @@
 
             <div class="panel">
               <div class="panel-header">
-                <h2 class="panel-title">Recent Activity</h2>
+                <h2 class="panel-title">⚡ Live Activity Stream</h2>
               </div>
               <div id="recent-activity-container" style="display: flex; flex-direction: column; gap: 12px;">
                 <p style="color: var(--text-dim); font-size: 13.5px;">Loading activity...</p>
@@ -114,7 +179,7 @@
           </div>
         </section>
 
-        <!-- View: Projects List -->
+        <!-- VIEW 2: PROJECTS LIST -->
         <section id="view-projects" style="display: none;">
           <div class="toolbar">
             <div class="search-box">
@@ -137,20 +202,34 @@
           </div>
         </section>
 
-        <!-- View: Kanban Project Board -->
+        <!-- VIEW 3: KANBAN PROJECT BOARD -->
         <section id="view-board" style="display: none;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; flex-wrap: wrap; gap: 14px;">
             <div>
               <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 6px;">
                 <button id="btn-back-to-projects" class="btn btn-secondary btn-sm">← Back</button>
-                <h2 id="board-project-title" style="font-size: 22px; font-weight: 800;">Project Title</h2>
+                <h2 id="board-project-title" style="font-size: 24px; font-weight: 800; letter-spacing: -0.4px;">Project Title</h2>
                 <span id="board-project-status" class="badge">ACTIVE</span>
                 <span id="board-user-role" class="badge badge-medium">OWNER</span>
               </div>
               <p id="board-project-desc" style="color: var(--text-muted); font-size: 13.5px;">Project description</p>
             </div>
 
-            <div style="display: flex; align-items: center; gap: 10px;">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <div class="view-mode-toggle">
+                <button class="view-mode-btn active" id="btn-view-kanban">
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2"/>
+                  </svg>
+                  Kanban
+                </button>
+                <button class="view-mode-btn" id="btn-view-list">
+                  <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16"/>
+                  </svg>
+                  List
+                </button>
+              </div>
               <button id="btn-manage-members" class="btn btn-secondary btn-sm">👥 Members</button>
               <button id="btn-add-task-board" class="btn btn-primary btn-sm">+ Add Task</button>
               <button id="btn-delete-project" class="btn btn-danger btn-sm" style="display: none;">Delete</button>
@@ -163,7 +242,7 @@
               <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
               </svg>
-              <input type="text" id="task-search-input" class="form-input" placeholder="Search tasks...">
+              <input type="text" id="task-search-input" class="form-input" placeholder="Search tasks by keyword...">
             </div>
             <select id="task-priority-filter" class="form-select" style="width: auto;">
               <option value="ALL">All Priorities</option>
@@ -177,10 +256,10 @@
             </select>
           </div>
 
-          <!-- Kanban Columns Grid -->
-          <div class="kanban-board">
+          <!-- Drag & Drop Kanban Columns Grid -->
+          <div class="kanban-board" id="kanban-board-container">
             <!-- Column 1: TODO -->
-            <div class="kanban-column" data-status="TODO">
+            <div class="kanban-column" data-status="TODO" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'TODO')">
               <div class="column-header">
                 <div class="column-title">
                   <span style="color: var(--color-todo);">●</span> To Do
@@ -191,7 +270,7 @@
             </div>
 
             <!-- Column 2: IN_PROGRESS -->
-            <div class="kanban-column" data-status="IN_PROGRESS">
+            <div class="kanban-column" data-status="IN_PROGRESS" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'IN_PROGRESS')">
               <div class="column-header">
                 <div class="column-title">
                   <span style="color: var(--color-in-progress);">●</span> In Progress
@@ -202,7 +281,7 @@
             </div>
 
             <!-- Column 3: COMPLETED -->
-            <div class="kanban-column" data-status="COMPLETED">
+            <div class="kanban-column" data-status="COMPLETED" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'COMPLETED')">
               <div class="column-header">
                 <div class="column-title">
                   <span style="color: var(--color-completed);">●</span> Completed
@@ -212,9 +291,37 @@
               <div class="task-list" id="column-completed"></div>
             </div>
           </div>
+
+          <!-- Table / List Alternative View -->
+          <div id="board-list-container" style="display: none; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-xl); overflow: hidden;">
+            <div style="padding: 16px 20px; border-bottom: 1px solid var(--border-color); font-weight: 700; font-size: 14px; color: var(--text-muted); display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr;">
+              <div>Task Title</div>
+              <div>Status</div>
+              <div>Priority</div>
+              <div>Assignee</div>
+              <div>Due Date</div>
+            </div>
+            <div id="board-list-rows"></div>
+          </div>
         </section>
       </div>
     </main>
+  </div>
+
+  <!-- COMMAND PALETTE MODAL (Ctrl + K) -->
+  <div class="command-palette-overlay" id="command-palette-overlay">
+    <div class="command-palette">
+      <div class="command-palette-header">
+        <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="color: var(--text-dim);">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        </svg>
+        <input type="text" id="command-palette-input" class="command-palette-input" placeholder="Type a command or jump to project..." autofocus>
+        <span class="nav-kbd">ESC</span>
+      </div>
+      <div class="command-palette-results" id="command-palette-results">
+        <!-- Dynamic command options -->
+      </div>
+    </div>
   </div>
 
   <!-- MODAL: Create / Edit Project -->
@@ -229,11 +336,11 @@
           <input type="hidden" id="project-id-input">
           <div class="form-group">
             <label class="form-label" for="project-name-input">Project Name *</label>
-            <input type="text" id="project-name-input" class="form-input" placeholder="e.g. Website Overhaul" required>
+            <input type="text" id="project-name-input" class="form-input" placeholder="e.g. Next-Gen Mobile App" required>
           </div>
           <div class="form-group">
             <label class="form-label" for="project-desc-input">Description</label>
-            <textarea id="project-desc-input" class="form-textarea" placeholder="Describe the project objectives..."></textarea>
+            <textarea id="project-desc-input" class="form-textarea" placeholder="Outline project objectives and milestones..."></textarea>
           </div>
           <div class="form-group" id="project-status-group" style="display: none;">
             <label class="form-label" for="project-status-select">Status</label>
@@ -268,11 +375,11 @@
           </div>
           <div class="form-group">
             <label class="form-label" for="task-title-input">Title *</label>
-            <input type="text" id="task-title-input" class="form-input" placeholder="e.g. Configure database migrations" required>
+            <input type="text" id="task-title-input" class="form-input" placeholder="e.g. Implement drag-and-drop animations" required>
           </div>
           <div class="form-group">
             <label class="form-label" for="task-desc-input">Description</label>
-            <textarea id="task-desc-input" class="form-textarea" placeholder="Detailed instructions or specifications..."></textarea>
+            <textarea id="task-desc-input" class="form-textarea" placeholder="Actionable steps, acceptance criteria..."></textarea>
           </div>
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
             <div class="form-group">
@@ -329,10 +436,10 @@
         </div>
       </div>
       <div class="modal-body">
-        <h2 id="detail-task-title" style="font-size: 19px; font-weight: 700; margin-bottom: 8px;">Task Title</h2>
-        <p id="detail-task-desc" style="color: var(--text-muted); font-size: 13.5px; margin-bottom: 20px; white-space: pre-wrap; line-height: 1.6;">No description provided.</p>
+        <h2 id="detail-task-title" style="font-size: 20px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.4px;">Task Title</h2>
+        <p id="detail-task-desc" style="color: var(--text-muted); font-size: 14px; margin-bottom: 22px; white-space: pre-wrap; line-height: 1.6;">No description provided.</p>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 14px; background: var(--bg-primary); border-radius: var(--radius-md); margin-bottom: 24px; font-size: 12.5px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 16px; background: var(--bg-primary); border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 24px; font-size: 13px;">
           <div><strong style="color: var(--text-dim);">Assignee:</strong> <span id="detail-task-assignee">Unassigned</span></div>
           <div><strong style="color: var(--text-dim);">Due Date:</strong> <span id="detail-task-due">No deadline</span></div>
           <div><strong style="color: var(--text-dim);">Creator:</strong> <span id="detail-task-creator">Creator Name</span></div>
@@ -340,19 +447,19 @@
         </div>
 
         <!-- Quick Status Change Bar -->
-        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid var(--border-color);">
-          <span style="font-size: 13px; font-weight: 600; color: var(--text-dim);">Move Status:</span>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 24px; padding-bottom: 18px; border-bottom: 1px solid var(--border-color); flex-wrap: wrap;">
+          <span style="font-size: 13px; font-weight: 700; color: var(--text-dim);">Move Status:</span>
           <button class="btn btn-secondary btn-sm" id="btn-move-todo">To Do</button>
           <button class="btn btn-secondary btn-sm" id="btn-move-progress">In Progress</button>
-          <button class="btn btn-secondary btn-sm" id="btn-move-completed">Completed</button>
+          <button class="btn btn-secondary btn-sm" id="btn-move-completed" style="border-color: rgba(16, 185, 129, 0.4); color: #34d399;">✓ Mark Completed</button>
         </div>
 
-        <!-- Comments Section -->
+        <!-- Comments Stream -->
         <div>
-          <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 12px;">💬 Discussion & Comments</h3>
-          <form id="form-comment" style="margin-bottom: 16px;">
+          <h3 style="font-size: 15px; font-weight: 700; margin-bottom: 14px;">💬 Discussion Thread</h3>
+          <form id="form-comment" style="margin-bottom: 18px;">
             <div style="display: flex; gap: 10px;">
-              <input type="text" id="comment-input" class="form-input" placeholder="Write a comment or update..." required>
+              <input type="text" id="comment-input" class="form-input" placeholder="Add a comment or status update..." required>
               <button type="submit" class="btn btn-primary btn-sm" style="white-space: nowrap;">Post</button>
             </div>
           </form>
@@ -368,19 +475,19 @@
   <div class="modal-overlay" id="modal-members">
     <div class="modal-content" style="max-width: 520px;">
       <div class="modal-header">
-        <h3 class="modal-title">Project Members</h3>
+        <h3 class="modal-title">Project Collaborators</h3>
         <button class="modal-close" data-close="modal-members">&times;</button>
       </div>
       <div class="modal-body">
         <form id="form-add-member" style="margin-bottom: 24px;">
-          <label class="form-label" for="add-member-email">Add Collaborator by Email</label>
+          <label class="form-label" for="add-member-email">Invite Member by Email</label>
           <div style="display: flex; gap: 10px;">
             <input type="email" id="add-member-email" class="form-input" placeholder="colleague@example.com" required>
             <button type="submit" class="btn btn-primary" style="white-space: nowrap;">Add Member</button>
           </div>
         </form>
 
-        <h4 style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">Current Members</h4>
+        <h4 style="font-size: 13.5px; font-weight: 700; margin-bottom: 12px; color: var(--text-muted);">Active Roster</h4>
         <div id="members-list-container" style="display: flex; flex-direction: column; gap: 10px;">
           <!-- Dynamic members list -->
         </div>
@@ -388,7 +495,7 @@
     </div>
   </div>
 
-  <!-- Toast Container -->
+  <!-- Toast Notification Container -->
   <div id="toast-container"></div>
 
   <!-- Scripts -->
